@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+PKGNAME=$(cat remastersys/DEBIAN/control|grep  -oP '(?<=Package: ).+')
+PKGVER=$(cat remastersys/DEBIAN/control|grep  -oP '(?<=Version: ).+')
+PKGARCH=$(cat remastersys/DEBIAN/control|grep  -oP '(?<=Architecture: ).+')
+
+dpkg-deb -Zxz -b remastersys ${PKGNAME}_${PKGVER}_${PKGARCH}.deb

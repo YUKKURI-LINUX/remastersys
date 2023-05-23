@@ -1,0 +1,19 @@
+Package: remastersys-debian-yukkuri
+Version: 3.10.19-2.2
+Architecture: all
+Maintainer: Hayate Nakamura <is01.njb@gmail.com>
+Installed-Size: 736
+Depends: coreutils, dialog, memtest86+, xorriso, findutils, os-prober, bash, passwd, sed, squashfs-tools, live-boot, live-config, live-config-systemd, live-boot-initramfs-tools, rsync, mount, laptop-detect, syslinux, util-linux, hwdata
+Suggests: gparted, xterm, zenity, xdebconfigurator, read-edid, xresprobe
+Section: system
+Priority: optional
+Description: Debian system remaster
+ This script creates a livecd of the installed system.
+ You can either make a distributable livecd or backup of your system.
+ For more information, please visit http://www.remastersys.com
+ .
+ (Repackaged on Mon, 06 Sep 2021 19:41:56 +0900 by dpkg-repack.)
+ .
+ (Repackaged on Wed, 08 Sep 2021 13:50:20 +0900 by dpkg-repack.)
+ .
+ (Repackaged on Wed, 22 Sep 2021 13:30:47 +0900 by dpkg-repack.)

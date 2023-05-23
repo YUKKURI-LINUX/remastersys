@@ -1,0 +1,81 @@
+#!/bin/sh
+# preinst script for remastersys
+#
+# see: dh_installdeb(1)
+
+set -e
+
+if [ -d /remastersys ]
+then
+mv /remastersys /home
+fi
+
+if [ -f /etc/remastersys.conf ]
+then
+mv /etc/remastersys.conf /etc/remastersys.conf.old
+fi
+
+if [ -f /etc/remastersys/isolinux/splash.png ]
+then
+mv /etc/remastersys/isolinux/splash.png /etc/remastersys/isolinux/splash.png.saved
+fi
+
+if [ ! -f /usr/share/polkit-1/actions/com.pkexec.remastersys.policy ]; then
+	
+cat <<EOF >/usr/share/polkit-1/actions/com.pkexec.remastersys.policy
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>The Remastersys Project</vendor>
+
+  <action id="org.freedesktop.policykit.pkexec.run-remastersys-gui">
+    <description>Run Remastersys</description>
+    <message>Authentication is required to run Remastersys as Root</message>
+    <defaults>
+        <allow_any>no</allow_any>
+        <allow_inactive>no</allow_inactive>
+        <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/remastersys-gui</annotate>
+  <annotate key="org.freedesktop.policykit.exec.allow_gui">TRUE</annotate>    
+  </action>
+
+  <action id="org.freedesktop.policykit.pkexec.run-remastersys-installer">
+    <description>Run Remastersys Installer</description>
+    <message>Authentication is required to run Remastersys Installer as Root</message>
+    <defaults>
+        <allow_any>no</allow_any>
+        <allow_inactive>no</allow_inactive>
+        <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/remastersys-installer</annotate>
+  <annotate key="org.freedesktop.policykit.exec.allow_gui">TRUE</annotate>    
+  </action>
+
+
+  <action id="org.freedesktop.policykit.pkexec.run-remastersys-grub-restore">
+    <description>Run Remastersys Grub Restore</description>
+    <message>Authentication is required to run Remastersys Grub Restore as Root</message>
+    <defaults>
+        <allow_any>no</allow_any>
+        <allow_inactive>no</allow_inactive>
+        <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/remastersys-grub-restore</annotate>
+  <annotate key="org.freedesktop.policykit.exec.allow_gui">TRUE</annotate>    
+  </action>
+
+</policyconfig>
+EOF
+
+else
+
+DISPLAY=:0 zenity --error --text "The Remastersys policy file already exist!"
+
+fi
+
+exit 0
+
+

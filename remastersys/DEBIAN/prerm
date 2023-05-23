@@ -1,0 +1,14 @@
+#!/bin/sh
+# prerm script for remastersys
+#
+# see: dh_installdeb(1)
+
+set -e
+if [ -f /usr/share/polkit-1/actions/com.pkexec.remastersys.policy ]; then
+     rm -f /usr/share/polkit-1/actions/com.pkexec.remastersys.policy
+fi
+#do nothing for now
+
+exit 0
+
+

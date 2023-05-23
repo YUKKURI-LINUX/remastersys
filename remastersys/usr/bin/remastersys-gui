@@ -1,0 +1,240 @@
+#!/bin/sh
+
+# remastersys-gui script to make an installable livecd/dvd from a Debian installed 
+# and customized system
+#
+#
+#  Created by Tony "Fragadelic" Brijeski
+#
+#  Copyright 2007,2008 Under the GNU GPL2 License
+#
+#  Created October 28th, 2007,2008
+#
+#  Modified by Zoltan Guba
+#  Copyright 2019 Under the GNU GPL2 License
+#
+#
+#  keeping version number in sync with main remastersys script
+#
+#
+#  This script requires either zenity or kdialog to run
+#
+testzenity=`which zenity`
+testkdialog=`which kdialog`
+
+if [ "$testzenity" = "" -o "testkdialog" = "" ]; then
+echo " None are present - proceeding to install the right one"
+if [ "`cat /etc/X11/default-display-manager`" = "/usr/bin/kdm" ]; then
+apt-get -y -q install kdebase-bin
+else
+apt-get -y -q install zenity
+fi
+fi
+
+
+
+if [ "$testzenity" != "" ]; then
+DIALOG="`which zenity` --width=640 --height=400"
+TITLE="--title="
+TEXT="--text="
+ENTRY="--entry "
+ENTRYTEXT="--entry-text "
+MENU="--list --column=Pick --column=Info"
+YESNO="--question "
+MSGBOX="--info "
+
+fi
+
+if [ "$testkdialog" != "" ]; then
+DIALOG="`which kdialog` --geometry=640x400"
+TITLE="--title "
+TEXT=""
+ENTRY="--inputbox "
+ENTRYTEXT=""
+MENU="--menu "
+YESNO="--yesno "
+MSGBOX="--msgbox "
+
+fi
+
+testroot="`whoami`"
+
+if [ "$testroot" != "root" ]; then
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"This must be run with root privileges."
+exit 1
+fi
+
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"It is necessary to close all other windows and unmount any network shares while running Remastersys Backup.  Please do so now and then click OK when you are ready to continue."
+
+mainmenu () {
+
+CHOICE=`$DIALOG $TITLE"Remastersys Backup" $MENU $TEXT"Please Select which option you would like?" Backup "Backup Complete System including User Data" Dist "Make a Distributable copy to share with friends - both cdfs and iso will be created" Distcdfs "Make a Distributable copy cd filesystem only - good if you want to add files to the cd" Distiso "Make a Distributable iso file only - cd filesystem must have been completed already" Modify "Modify the remastersys config file to customize options" Clean "Remove temporary files" Info "About Remastersys Backup" Quit "Quit Remastersys Backup"`
+
+if [ "$CHOICE" = "Backup" ]; then
+backupmenu
+elif [ "$CHOICE" = "Dist" ]; then
+distmenu
+elif [ "$CHOICE" = "Distcdfs" ]; then
+distcdfsmenu
+elif [ "$CHOICE" = "Distiso" ]; then
+distisomenu
+elif [ "$CHOICE" = "Modify" ]; then
+modifymenu
+elif [ "$CHOICE" = "Clean" ]; then
+cleanmenu
+elif [ "$CHOICE" = "Info" ]; then
+. /etc/remastersys/remastersys.version
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"Remastersys Backup is the Graphical Frontend to remastersys which is the command line utility that can take an Ubuntu or variant installed system and turn it back into a distributable livecd/dvd/bluray or make a complete system backup including the /home directory and all user files contained within. This is version $REMASTERSYSVERSION. Remastersys Backup and remastersys were created by Tony Brijeski, modified to Debian 10 GNU Linux by Zoltan Guba."
+mainmenu
+else
+exit 0
+fi
+
+}
+
+backupmenu () {
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"You have selected Backup Mode.  Do not interrupt this process. Click OK to Start the Backup LiveCD/DVD process."
+xterm -fa 'Monospace' -fs 14 -e "remastersys backup"
+
+. /etc/remastersys.conf
+
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"Your $CUSTOMISO and $CUSTOMISO.md5 files are ready in $WORKDIR/remastersys.  It is recommended to test it in a virtual machine or on a rewritable cd/dvd to ensure it works as desired.  Click on OK to return to the main menu."
+mainmenu
+exit 0
+}
+
+distmenu () {
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"You have selected Dist Mode.  Click OK to Start the Distributable LiveCD/DVD process."
+xterm -fa 'Monospace' -fs 14 -e "remastersys dist"
+
+. /etc/remastersys.conf
+
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"Your $CUSTOMISO and $CUSTOMISO.md5 files are ready in $WORKDIR/remastersys.  It is recommended to test it in a virtual machine or on a rewritable cd/dvd to ensure it works as desired.  Click on OK to return to the main menu."
+mainmenu
+exit 0
+}
+
+distcdfsmenu () {
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"You have selected Dist CDFS Mode.  Click OK to Start the Distributable LiveCD/DVD/Bluray filesystem build process."
+xterm -fa 'Monospace' -fs 14 -e "remastersys dist cdfs"
+
+. /etc/remastersys.conf
+
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"Your livecd filesystem is ready in $WORKDIR/remastersys.  You can now add files to the cd and then run the iso only option when you are done. Click on OK to return to the main menu."
+mainmenu
+exit 0
+}
+
+distisomenu () {
+. /etc/remastersys.conf
+if [ -f "$WORKDIR/remastersys/ISOTMP/live/filesystem.squashfs" ]; then
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"You have selected Dist ISO Mode.  Click OK to create the iso file."
+xterm -fa 'Monospace' -fs 14 -e "remastersys dist iso"
+
+. /etc/remastersys.conf
+
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"Your $CUSTOMISO and $CUSTOMISO.md5 files are ready in $WORKDIR/remastersys.  It is recommended to test it in a virtual machine or on a rewritable cd/dvd to ensure it works as desired.  Click on OK to return to the main menu."
+mainmenu
+exit 0
+else
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"The livecd filesystem does not exist.  Click OK to go back to the main menu and try the normal Dist mode or the Dist CDFS again."
+mainmenu
+exit0
+fi
+}
+
+modifymenu () {
+
+if [ -f /etc/remastersys.conf ]; then
+. /etc/remastersys.conf
+fi
+
+MODIFY=`$DIALOG $TITLE"Remastersys Backup" $MENU $TEXT"Please Select which option you would like to change?" a "Username = $LIVEUSER" b "Hostname = $LIVEHOST" c "Title = $LIVECDLABEL" d "Filename = $CUSTOMISO" e "Working Directory = $WORKDIR" f "Files to Exclude = $EXCLUDES" q "Go back to main menu"`
+
+if [ "$MODIFY" = "a" ]; then
+LIVEUSER=`$DIALOG $TITLE"Remastersys Backup" $ENTRY $TEXT"Enter new Username - lowercase only" $ENTRYTEXT"$LIVEUSER"`
+if [ "$LIVEUSER" = "" ]; then
+LIVEUSER="user"
+fi
+#make sure live user is all lowercase
+LIVEUSER="`echo $LIVEUSER | awk '{print tolower ($0)}'`"
+
+elif [ "$MODIFY" = "b" ]; then
+LIVEHOST=`$DIALOG $TITLE"Remastersys Backup" $ENTRY $TEXT"Enter new Hostname - lowercase only" $ENTRYTEXT"$LIVEHOST"`
+if [ "$LIVEHOST" = "" ]; then
+LIVEHOST="live"
+fi
+
+#make sure live hostname is all lowercase
+LIVEHOST="`echo $LIVEHOST | awk '{print tolower ($0)}'`"
+
+elif [ "$MODIFY" = "c" ]; then
+LIVECDLABEL=`$DIALOG $TITLE"Remastersys Backup" $ENTRY $TEXT"Enter new LiveCD/DVD Title" $ENTRYTEXT"$LIVECDLABEL"`
+if [ "$LIVECDLABEL" = "" ]; then
+LIVECDLABEL="Custom Live Media"
+fi
+elif [ "$MODIFY" = "d" ]; then
+CUSTOMISO=`$DIALOG $TITLE"Remastersys Backup" $ENTRY $TEXT"Enter new Filename" $ENTRYTEXT"$CUSTOMISO"`
+if [ "$CUSTOMISO" = "" ]; then
+CUSTOMISO="custom.iso"
+fi
+elif [ "$MODIFY" = "e" ]; then
+WORKDIR=`$DIALOG $TITLE"Remastersys Backup" $ENTRY $TEXT"Enter new Working Directory" $ENTRYTEXT"$WORKDIR"`
+if [ "$WORKDIR" = "" ]; then
+WORKDIR="/home/remastersys"
+fi
+elif [ "$MODIFY" = "f" ]; then
+if [ "$EXCLUDES" = "" ]; then
+EXCLUDES=`$DIALOG $TITLE"Remastersys Backup" $ENTRY $TEXT"Enter files to exclude separated by a space"`
+else
+EXCLUDES=`$DIALOG $TITLE"Remastersys Backup" $ENTRY $TEXT"Enter files to exclude separated by a space" $ENTRYTEXT"$EXCLUDES"`
+fi
+
+else
+
+mainmenu
+exit 0
+
+fi
+
+cat > /etc/remastersys.conf <<FOO
+#Remastersys Global Configuration File
+
+
+# This is the temporary working directory and won't be included on the cd/dvd
+WORKDIR="$WORKDIR"
+
+
+# Here you can add any other files or directories to be excluded from the live filesystem
+# Separate each entry with a space
+EXCLUDES="$EXCLUDES"
+
+
+# Here you can change the livecd/dvd username
+LIVEUSER="$LIVEUSER"
+
+# Here you can change the livecd/dvd hostname
+LIVEHOST="$LIVEHOST"
+
+# Here you can change the name of the livecd/dvd label
+LIVECDLABEL="$LIVECDLABEL"
+
+
+# Here you can change the name of the ISO file that is created
+CUSTOMISO="$CUSTOMISO"
+
+FOO
+
+modifymenu
+
+}
+
+cleanmenu () {
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"This will remove all the files from the temporary directory. Click OK to proceed."
+xterm -fa 'Monospace' -fs 14 -e "remastersys clean"
+$DIALOG $TITLE"Remastersys Backup" $MSGBOX $TEXT"Completed. Click OK to return to the main menu."
+mainmenu
+exit 0
+}
+
+mainmenu
